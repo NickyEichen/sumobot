@@ -1,0 +1,8 @@
+{
+  "MOTOR_PIN_A1": 35
+  "MOTOR_PIN_A2": 33,
+
+  "MOTOR_PIN_B1": 12,
+  "MOTOR_PIN_B2": 32
+      
+}
