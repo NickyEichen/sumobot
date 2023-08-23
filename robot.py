@@ -1,3 +1,4 @@
+from robot_hardware.motor import PIDMotor as Motor
 import json
 import RPi.GPIO as GPIO
 

@@ -1,8 +1,13 @@
 {
-  "MOTOR_PIN_A1": 35
-  "MOTOR_PIN_A2": 33,
+  "MOTOR_L_P1": 35,
+  "MOTOR_L_P2": 33,
+  "ENCODER_L_A": 0,
+  "ENCODER_L_B": 0,
+  "ENCODER_L_TICKS": 312,
 
-  "MOTOR_PIN_B1": 12,
-  "MOTOR_PIN_B2": 32
-      
+  "MOTOR_R_P1": 12,
+  "MOTOR_R_P2": 32,
+  "ENCODER_R_A": 0,
+  "ENCODER_R_B": 0,
+  "ENCODER_R_TICKS": 312
 }

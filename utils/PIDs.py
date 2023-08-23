@@ -25,6 +25,7 @@ class BasePID:
     def update(self, error, derror, feedforward=0, *args):
         val = self.kp*error + self.ki*self.integral + self.kd * derror + self.kf*feedforward
         self.integral = self.integral*self.ke + error
+        return val
 
     def debug(self, *args):
         if BasePID.DEBUG and self.DEBUG:
@@ -50,7 +51,7 @@ class AutoDerivativePID(BasePID):
             self.errors.pop(0)
         if len(self.errors) < 2:
             return 0
-        derror = self.slope(self.times, self.errors)
+        derror = feedforward - self.slope(self.times, self.errors)
 
         super(AutoDerivativePID, self).update(error, derror, feedforward)
 
@@ -65,37 +66,47 @@ class AutoDerivativePID(BasePID):
 
 class PIDThread():
 
-    def __init__(self, PID, fn, frequency, timeout=10):
-        self.pid = PID
-        self.fn = fn
+    def __init__(self, pid, state_fn, update_fn, frequency=None, timeout=10):
+
+        if frequency is None:
+            with open('json/%s.json' % pid.name) as f:
+                self.frequency = json.load(f).get("frequency")
+        else:
+            self.frequency = frequency
+
+        self.pid = pid
+
+        self.state_fn = state_fn
+        self.update_fn = update_fn
 
         self.timeout = timeout
 
+        self.thread = threading.Thread(target=self.looper())
+
+
         self.lock = threading.Lock()
-        self.target = None
         self.kill = False
-        self.frequency = frequency
         self.last_time = 0
 
     def start_thread(self):
         if not self.kill:
             return
         self.kill = False
-        th = threading.Thread(target=self.looper())
-        th.start()
+        self.touch()
+        self.thread.start()
 
     def stop_thread(self):
-        self.kill = True
+        if not self.kill:
+            self.kill = True
+            self.thread.join()
 
     def looper(self):
-        if not self.target:
-            while not self.kill and time.time() - self.last_time < self.timeout:
-                time.sleep(self.frequency)
         while not self.kill and time.time() - self.last_time < self.timeout:
             with self.lock:
-                self.PID.update(self.target)
+                correction = self.pid.update(*self.state_fn())
+                self.update_fn(correction)
             time.sleep(self.frequency)
-        print("Stopped PID thread: ", self.PID.name, self.PID.ID)
+        print("Stopped PID thread: ", self.pid.name, self.pid.ID)
 
-    def update(self, *target):
-        self.target = target
+    def touch(self):
+        self.last_time = time.time()

@@ -18,8 +18,9 @@ class MotorEncoder:
         self.lock = threading.Lock()
 
         self.target_samples = num_samples
-        self.live_thread = True
+        self.live_thread = False
         self.timeout = timeout
+        self.ran = False
 
     def start_sampling_thread(self):
         self.last_time = time.time()
@@ -33,6 +34,8 @@ class MotorEncoder:
         self.live_thread = False
 
     def sampling_thread(self):
+        print("Sampling thread is running")
+        self.ran = True
         while self.live_thread and time.time() - self.last_time < self.timeout:
             self.record_reading(self.get_reading())
             time.sleep(self.max_del_t/self.target_samples)
@@ -44,16 +47,19 @@ class MotorEncoder:
     def get_reading(self):
         n = self.enc.read()
         dir = 1 - 2*self.reverse
-        return n/self.ticks_per_rev * 2*math.PI *dir # returns in radians
+        return n/self.ticks_per_rev * 2*math.pi *dir # returns in radians
 
     def record_reading(self, reading):
         with self.lock:
+            print(self.times, self.readings)
             self.readings.append(reading)
             self.times.append(time.time())
         self.purge_readings()
 
     def purge_readings(self):
         with self.lock:
+            if len(self.times) == 0:
+                return
             i = 0
             t = time.time()
             while t - self.times[i] > self.max_del_t:
